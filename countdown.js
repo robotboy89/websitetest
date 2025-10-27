@@ -12,66 +12,59 @@ display.textContent = 'Loading...';
 document.body.appendChild(display);
 
 let audioCtx;
+const tick1 = new Audio("tick1.mp3");
+const tick2 = new Audio("tick2.mp3");
+tick1.preload = "auto";
+tick2.preload = "auto";
+
+let tickToggle = false;
+
 function tickSound() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const now = audioCtx.currentTime;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'square';
-  osc.frequency.value = 1000;
-  gain.gain.setValueAtTime(0.2, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(now);
-  osc.stop(now + 0.1);
+  const snd = tickToggle ? tick1 : tick2;
+  tickToggle = !tickToggle;
+  snd.currentTime = 0;
+  snd.play().catch(() => {});
 }
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
-function getTarget(now) {
-  const t = new Date(now);
+function getTarget() {
+  const t = new Date();
+  t.setFullYear(2025);
   t.setMonth(10);  // November (0-indexed)
   t.setDate(27);
   t.setHours(0,0,0,0);
-  if (t <= now) t.setFullYear(t.getFullYear() + 1);
   return t;
 }
 
 function updateCountdown(now) {
-  const target = getTarget(now);
+  const target = getTarget();
   const diff = target - now;
+  
+  // If we've passed the target date, hide everything
   if (diff <= 0) {
-    display.textContent = '00 00:00:00';
-    return;
+    display.textContent = '';
+    document.body.style.display = 'none';
+    return false;
   }
+  
   const s = Math.floor(diff / 1000);
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
   display.textContent = `${pad(d)} ${pad(h)}:${pad(m)}:${pad(sec)}`;
+  return true;
 }
 
-async function init() {
-  // get accurate current time once
-  let now = new Date();
-  try {
-    const res = await fetch('https://worldtimeapi.org/api/ip');
-    const data = await res.json();
-    now = new Date(data.datetime);
-  } catch(e) {
-    console.warn('Time API failed, using local clock.');
-  }
-
+function init() {
   let lastSecond = -1;
   function loop() {
-    const current = new Date();
-    const diff = current - now;
-    const syncedNow = new Date(now.getTime() + diff);
-    const sec = Math.floor(syncedNow.getTime() / 1000);
+    const now = new Date();
+    const sec = Math.floor(now.getTime() / 1000);
     if (sec !== lastSecond) {
-      updateCountdown(syncedNow);
+      const shouldContinue = updateCountdown(now);
+      if (!shouldContinue) return; // Stop the loop after target date
       tickSound();
       lastSecond = sec;
     }
