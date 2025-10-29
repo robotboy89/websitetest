@@ -11,22 +11,18 @@ const display = document.createElement('div');
 display.textContent = 'Loading...';
 document.body.appendChild(display);
 
-let audioCtx;
 const tick1 = new Audio("tick1.mp3");
 const tick2 = new Audio("tick2.mp3");
 tick1.preload = "auto";
 tick2.preload = "auto";
 
 let tickToggle = false;
-
 function tickSound() {
   const snd = tickToggle ? tick1 : tick2;
   tickToggle = !tickToggle;
   snd.currentTime = 0;
   snd.play().catch(() => {});
 }
-
-function pad(n) { return String(n).padStart(2, '0'); }
 
 function getTarget() {
   const t = new Date();
@@ -41,19 +37,14 @@ function updateCountdown(now) {
   const target = getTarget();
   const diff = target - now;
   
-  // If we've passed the target date, hide everything
   if (diff <= 0) {
     display.textContent = '';
     document.body.style.display = 'none';
     return false;
   }
-  
-  const s = Math.floor(diff / 1000);
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  display.textContent = `${pad(d)} ${pad(h)}:${pad(m)}:${pad(sec)}`;
+
+  const seconds = Math.floor(diff / 1000);
+  display.textContent = seconds.toLocaleString(); // e.g. "123,456"
   return true;
 }
 
@@ -64,7 +55,7 @@ function init() {
     const sec = Math.floor(now.getTime() / 1000);
     if (sec !== lastSecond) {
       const shouldContinue = updateCountdown(now);
-      if (!shouldContinue) return; // Stop the loop after target date
+      if (!shouldContinue) return;
       tickSound();
       lastSecond = sec;
     }
