@@ -44,7 +44,7 @@ function updateCountdown(now) {
   }
 
   const seconds = Math.floor(diff / 1000);
-  display.textContent = seconds.toLocaleString(); // e.g. "123,456"
+  display.textContent = seconds.toString(); // no commas
   return true;
 }
 
